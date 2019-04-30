@@ -13,10 +13,14 @@ library(lubridate)
 library(modelr)
 library(gapminder)
 
+#How do countrys' total populations affect olympic performance?
+
 olympics <- read_csv("athlete_events.csv")
 regions <- read_csv("noc_regions.csv") 
 country_stats <- read_csv("population_total.csv")
-
+continents <- gapminder::gapminder %>%
+  select(country, continent) %>%
+  distinct()
 #tidying
 
 tidy_countries <- country_stats %>%
@@ -35,9 +39,10 @@ olympics2 <- olympics %>%
   mutate(year = Year)
 olympics3 <- olympics2 %>%
   inner_join(tidy_countries, by = c("country", "year")) %>%
-  select(-c(notes,region, Team, NOC, Games)) 
+  select(-c(notes,region, Team, NOC, Games)) %>%
+  left_join(continents, by = "country")
 
-diagnose <- anti_join(olympics2, tidy_countries, by = "country")
+diagnose <- anti_join(olympics2, continents, by = "country")
 
 #some countries that are not recognized in tidy_countries, such as Chinese Taipei,
 #Puerto Rico, and Singapore, won't appear in this study as their populations are
