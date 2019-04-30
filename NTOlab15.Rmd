@@ -32,8 +32,7 @@ olympics2 <- olympics %>%
   mutate(country = if_else(country == "Slovakia", "Slovak Republic", country)) %>%
   mutate(country = if_else(country == "Kyrgyzstan", "Kyrgyz Republic", country)) %>%
   mutate(country = if_else(country == "Macedonia", "Macedonia, FYR", country)) %>%
-  mutate(year = Year) %>%
-  filter(Season == "Summer", year > 1950)
+  mutate(year = Year)
 olympics3 <- olympics2 %>%
   inner_join(tidy_countries, by = c("country", "year")) %>%
   select(-c(notes,region, Team, NOC, Games)) 
