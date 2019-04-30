@@ -5,6 +5,8 @@ date: "4/29/2019"
 output: html_document
 ---
 
+Team Question: What factors give countries or individuals advantages over their competition in the Olympics?
+
 ```{r,echo = FALSE,include=FALSE}
 
 library(tidyverse)
