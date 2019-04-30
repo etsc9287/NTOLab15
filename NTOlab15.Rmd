@@ -1,0 +1,49 @@
+---
+title: "NATOLab15"
+author: "NTO"
+date: "4/29/2019"
+output: html_document
+---
+
+```{r,echo = FALSE,include=FALSE}
+
+library(tidyverse)
+library(stringr)
+library(lubridate)
+library(modelr)
+library(gapminder)
+
+olympics <- read_csv("athlete_events.csv")
+regions <- read_csv("noc_regions.csv") 
+country_stats <- read_csv("population_total.csv")
+
+#tidying
+
+tidy_countries <- country_stats %>%
+  gather(seq(2,302), key = "year", value = "population")
+tidy_countries$year <- parse_double(tidy_countries$year)
+
+olympics2 <- olympics %>%
+  left_join(regions, by = "NOC") %>%
+  mutate(Medal = if_else(is.na(Medal), "No Medal", Medal)) %>%
+  mutate(country = region) %>%
+  mutate(country = if_else(country == "USA", "United States", country)) %>%
+  mutate(country = if_else(country == "UK", "United Kingdom", country)) %>%
+  mutate(country = if_else(country == "Slovakia", "Slovak Republic", country)) %>%
+  mutate(country = if_else(country == "Kyrgyzstan", "Kyrgyz Republic", country)) %>%
+  mutate(country = if_else(country == "Macedonia", "Macedonia, FYR", country)) %>%
+  mutate(year = Year) %>%
+  filter(Season == "Summer", year > 1950)
+olympics3 <- olympics2 %>%
+  inner_join(tidy_countries, by = c("country", "year")) %>%
+  select(-c(notes,region, Team, NOC, Games)) 
+
+diagnose <- anti_join(olympics2, tidy_countries, by = "country")
+
+#some countries that are not recognized in tidy_countries, such as Chinese Taipei,
+#Puerto Rico, and Singapore, won't appear in this study as their populations are
+#unavailable.  Countries that had different names in the two datasets, like the US,
+#the UK, and Slovakia, were renamed and will appear in this study.  After diagnosing
+#from anti_join, 4703 entries out of 271,116 must be dropped.
+
+```
