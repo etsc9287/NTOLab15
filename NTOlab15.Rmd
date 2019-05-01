@@ -5,8 +5,6 @@ date: "4/29/2019"
 output: html_document
 ---
 
-Team Question: What factors give countries or individuals advantages over their competition in the Olympics?
-
 ```{r,echo = FALSE,include=FALSE}
 
 library(tidyverse)
@@ -15,16 +13,40 @@ library(lubridate)
 library(modelr)
 library(gapminder)
 
-#How do countrys' total populations affect olympic performance?
-
 olympics <- read_csv("athlete_events.csv")
 regions <- read_csv("noc_regions.csv") 
 country_stats <- read_csv("population_total.csv")
+```
+
+****
+### Team Section
+****
+
+Team Question: What factors give countries or individuals advantages over their competition in the Olympics?
+
+Importance: This is an important question as it may provide both individuals and teams recommendations on how they can raise their likelyhood of winning a medal and bringing glory to their countries!
+
+```{r,echo = FALSE}
+#needs teal plot
+```
+
+Answer/Conclusion:
+
+Recommendations: 
+
+****
+### Ethan's Section
+****
+
+Subquestion: How do countrys' populations affect olympic performance and how does this correlation differ in different areas of the world?
+
+Importance: This question contributes to out overall question as it may provide helpful recommendations to countries on how their teams could improve olympic performance based on population and area of the world.
+
+```{r}
+
 continents <- gapminder::gapminder %>%
   select(country, continent) %>%
   distinct()
-#tidying
-
 tidy_countries <- country_stats %>%
   gather(seq(2,302), key = "year", value = "population")
 tidy_countries$year <- parse_double(tidy_countries$year)
@@ -41,15 +63,122 @@ olympics2 <- olympics %>%
   mutate(year = Year)
 olympics3 <- olympics2 %>%
   inner_join(tidy_countries, by = c("country", "year")) %>%
-  select(-c(notes,region, Team, NOC, Games)) %>%
+  select(-c(notes,region, Team, NOC, Games, Age, Weight, Height, Sex, Year, City)) %>%
   left_join(continents, by = "country")
 
 diagnose <- anti_join(olympics2, continents, by = "country")
+```
 
-#some countries that are not recognized in tidy_countries, such as Chinese Taipei,
-#Puerto Rico, and Singapore, won't appear in this study as their populations are
-#unavailable.  Countries that had different names in the two datasets, like the US,
-#the UK, and Slovakia, were renamed and will appear in this study.  After diagnosing
-#from anti_join, 4703 entries out of 271,116 must be dropped.
+* Tidying: this is the tidying section of my analysis, as I joined a gapminder dataset with the olympics dataset to get populations for each country for each year.  Some countries that are not recognized in tidy_countries, such as Chinese Taipei, Puerto Rico, and Singapore, won't appear in this study as their populations are unavailable.  Countries that had different names in the two datasets, like the US, the UK, and Slovakia, were renamed with if_else and will appear in this study.  After diagnosing from anti_join, around 34000 entries out of 270000 must be dropped.
+
+```{r, echo = FALSE}
+
+pops <- olympics3 %>%
+  select(year, population) %>%
+  distinct() %>%
+  arrange(year) %>%
+  group_by(year) %>%
+  summarise(world_pop = sum(population))
+
+medals <- olympics3 %>%
+  select(year, Medal) %>%
+  group_by(year) %>%
+  summarise(num_events = n())
+
+medal_table <- olympics3 %>%
+  filter(Medal != "No Medal") %>%
+  inner_join(pops, by = "year") %>%
+  mutate(pop_prop = population / world_pop) %>%
+  group_by(country, continent, year, pop_prop) %>%
+  summarise(num_medals = n()) %>%
+  arrange(year) %>%
+  na.omit() %>%
+  mutate(season = if_else(year %% 4 == 0, "Summer Games", "Winter Games")) %>%
+  inner_join(medals, by = "year") %>%
+  mutate(medal_prop = num_medals / num_events)
+
+model1 <- lm(medal_prop ~ pop_prop, data = medal_table)
+grid1 <- medal_table %>%
+  data_grid(medal_prop)
+stats1 <- medal_table %>%
+  add_predictions(model1) %>%
+  add_residuals(model1)
+
+ggplot(data = medal_table, mapping = aes(x = pop_prop)) +
+  geom_point(aes(y = medal_prop)) +
+  geom_line(aes(y = pred), data = stats1) +
+  xlab("Country Population Proportion Out of Other Competing Countrys' Populations") +
+  ylab("Medal Proportion For That Year") +
+  ggtitle("Olympics 1896 - 2016: Country Population vs. Performance") +
+  geom_text(aes(y = medal_prop,
+            label = if_else(medal_prop > 0.075 | pop_prop > 0.4, country, ""), 
+            hjust = if_else(medal_prop > 0.075, -0.1, 1.15)))
+
+cor(medal_table$pop_prop, medal_table$medal_prop)
+coef(model1)
+
+ggplot(data = stats1, aes(x = pop_prop, y = resid)) +
+  geom_point()
 
 ```
+
+* Transformation: this is the transformation and first graphical / modeling section of my analysis.  I made a table in which the two variables of interest for correlation are population proportion and medal proportion.  Population proportion takes the population of a given country and divides it by the sum of the populations of other countries competing in the same olympics for that year, and medal proportion is the proportion of events in which individuals from given country medaled for a given year.  These proportions are necessary because of confounding variables such as events being added over time, populations rising over time, etc.
+
+* Findings 1: I first created a basic model and scatterplot of population proportion vs. medal proportion, as well as the corresponding residuals (note: points represent given countries AND given years, though I was unable to label the year on the graph.  I put them in this paragraph).  I found that there exists an overall positive moderate correlation value of R = 0.30 between the two variables and a weak slope of 0.08.  One of the most noticeable ideas about this graph is that based on the labels, we can see that some European countries (Greece and Germany in 1896, France in 1900, and the UK in 1908) are grouped closely together and far away from the US in 1904 and China in 1996, possibly confirming my belief that areas of the world may affect this correlation.  It's also noteable that these extreme proportions took place in the earliest years when there were less countries competing and less events.  Now it's time to analyze how continents of the world affect my overall correlation...
+
+```{r, echo = FALSE}
+
+ggplot(data = medal_table, mapping = aes(x = pop_prop)) +
+  geom_point(aes(y = medal_prop, color = continent)) +
+  geom_smooth(aes(y = medal_prop), method = "lm", se = FALSE) +
+  geom_line(aes(y = pred), data = stats1) +
+  xlab("Country Population Proportion Out of Other Competing Countrys' Populations") +
+  ylab("Medal Proportion For That Year") +
+  ggtitle("Olympics 1896 - 2016: Country Population vs. Performance") +
+  facet_wrap(~continent)
+
+nesting <- medal_table %>%
+  group_by(continent) %>%
+  nest()
+
+cont_model <- function(df){
+  lm(medal_prop ~ pop_prop, data = df)
+}
+
+nesting <- nesting %>%
+  mutate(model = map(data, cont_model)) %>%
+  mutate(pred = map(model, predict)) %>%
+  mutate(resid = map(model, residuals))
+
+nesting$model[[2]] #Europe - higher slope, stronger prediction (R = 0.45)
+europe_cor <- medal_table %>%
+  filter(continent == "Europe") 
+cor(europe_cor$pop_prop, europe_cor$medal_prop)
+
+nesting$model[[3]] #Americas - higher slope, stronger prediction (R = 0.64)
+americas_cor <- medal_table %>%
+  filter(continent == "Americas")
+cor(americas_cor$pop_prop, americas_cor$medal_prop)
+
+nesting$model[[4]] #Asia - lower slope, stronger prediction (R = 0.44)
+asia_cor <- medal_table %>% 
+  filter(continent == "Asia")
+cor(asia_cor$pop_prop, asia_cor$medal_prop)
+
+nesting$model[[1]] #Oceania - higher slope, weaker prediction (R = 0.23)
+oceania_cor <- medal_table %>% 
+  filter(continent == "Oceania")
+cor(oceania_cor$pop_prop, oceania_cor$medal_prop)
+
+nesting$model[[5]] #Africa - lower slope, stronger prediction (R = 0.33)
+africa_cor <- medal_table %>% 
+  filter(continent == "Africa")
+cor(africa_cor$pop_prop, africa_cor$medal_prop)
+
+```
+
+* Findings 2: After faceting by continent and creating models for each continent (blue lines) while comparing them to the overall model (black lines), we can see that there are clear distinctions between the 5 continents, though Oceania and Africa are rather insignificant due to lower sample size and less visibility.  Higher slopes exist in the Americas and Europe, with very strong R values of 0.64 and 0.45, respectively, meaning the correlation between population and olympic performance is very prevelent in these two continents.  Asia, on the other hand, shows relatively strong R value of 0.33 but a much weaker slope as countries in this part of the world appear to perform quite poorly regardless of population.  This is likely what weakened the overall correlation so much, especially with China in 1996 (over 1 billion people), getting so few medals.  I nested by continent so slopes of lines for all continents are visible, and also found all the corresponding filtered R values.
+
+* Explanation / Recommendations: Europe and the Americas likely show strong correlation between population proportion and olympic performance because they have historically included richer countries that care about sports, meaning population is a significant factor.  Asia, on the other hand, has historically included many third world countries under communism, shifting their focus away from sports, meaning a country with a giant population like China won't necessarily perform better than its neighbors if they also have barely trained top olympians.  Much of China's population also lives in rural areas.
+
+* New tools: I used modeling tools such as lm(), nesting, and adding predictions and residuals.  Explanations of how I used these tools are included above.
