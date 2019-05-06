@@ -243,14 +243,28 @@ stats12 <- nesting12$data[[11]] %>%
   add_predictions(mod1) %>%
   add_residuals(mod1)
 
-ggplot(data = stats12, mapping = aes(x = prop, y = resid)) +
-  geom_point()
+mod2 <- lm(prop ~ Year, data = nesting12$data[[6]])
+grid13 <- nesting12$data[[6]] %>%
+  data_grid(prop)
+stats13 <- nesting12$data[[6]] %>%
+  add_predictions(mod1) %>%
+  add_residuals(mod1)
+
+ggplot(data = stats13, mapping = aes(x = Year, y = resid)) +
+  geom_point() +
+  ylab("Residuals") +
+  ggtitle("Proportion of Young Adults winning Gold Medals")
+
+ggplot(data = stats12, mapping = aes(x = Year, y = resid)) +
+  geom_point() +
+  ylab("Residuals") +
+  ggtitle("Proportion of Youth winning no Medals")
 
 ```
 
-Findings: 
+Findings: In my findings I have found out that the amount of older participants start to decrease over the years. Through tidying up my data and categorizing participants by age I have developed a graph and a method to check the proportion of winning a bronze, silver, gold or no medal for three different age groups. I have also found a way to plot individual sections of the age categories I created and the type of medal they win.
 
-New Tools:
+New Tools: In this lab I used new nesting tools to help me plot the proportions and the age groups into individual graphs. I also put in functions like lm(), add_predictions() and add_residuals().
 
 ****
 ### David's Section
