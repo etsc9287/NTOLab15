@@ -27,8 +27,23 @@ Team Question: What factors give countries or individuals advantages over their 
 
 Importance: This is an important question as it may provide both individuals and teams recommendations on how they can raise their likelyhood of winning a medal and bringing glory to their countries!
 
-```{r,echo = FALSE}
+```{r,echo = FALSE,message=FALSE}
 #needs team plot
+sex <- olympics %>% group_by(Sex,Year) %>% summarise(participants = n()) %>% filter(Year != 1994,Year != 1998,Year != 2002,Year != 2006,Year != 2010,Year != 2014)
+## groups by given variables and then adds a column of today participants in that event
+sex1 <- olympics %>% group_by(Sex,Year) %>% count(Medal)
+sexxy <- inner_join(sex1,sex) %>% mutate(prop = n/participants)
+sassy <- sexxy %>% filter(Medal != "No Medal")%>% group_by(Sex,Year) %>% summarize(placing = sum(n),prop = sum(prop)) %>% filter(Year != 1994,Year != 1998,Year != 2002,Year != 2006,Year != 2010,Year != 2014)
+
+mod2 <- lm(prop ~ Year * Sex, data = sassy)
+
+gridtry <- sassy %>% 
+ data_grid(prop,Year) %>% 
+  gather_predictions(mod2)
+
+ggplot(sassy, aes(Year,prop,colour = Sex)) + 
+  geom_point() + geom_smooth(se = FALSE)+
+ ggtitle("Time Series on number of medalists for each sex")
 ```
 
 Answer/Conclusion:
