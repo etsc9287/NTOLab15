@@ -1,3 +1,4 @@
+
 ---
 title: "NATOLab15"
 author: "NTO"
@@ -46,9 +47,9 @@ ggplot(sassy, aes(Year,prop,colour = Sex)) +
  ggtitle("Time Series on number of medalists for each sex")
 ```
 
-Answer/Conclusion:
+Answer/Conclusion: There are many factors that affect the performace of a country or indiviudual. We thought that gender and the probablity of winning was the most interesting factor that affects performace. Our graph above shows sex has and influnece on probablity of wining medls, the curve is higher for females. this makes sense because they have less people competing for each medal. This supports David's seciton that there are more and more females starting to particpate in more events. This makes sense because these events are going to have less people.
 
-Recommendations: 
+Recommendations: We reccomend to ecourage females to continue to participate in the olympics. It seems that we are alreadying going in this direction and it is good to continue this trend, for more gender equality in the olympics.
 
 ****
 ### Ethan's Section
@@ -524,5 +525,518 @@ New Tools:  I used `plot_grid()`, `map()`, `nest()`, `lm()`.
 * Ryan: ind section
 
 * Arie:
+
+=======
+---
+title: "NATOLab15"
+author: "NTO"
+date: "4/29/2019"
+output: html_document
+---
+
+```{r,echo = FALSE,include=FALSE}
+
+library(tidyverse)
+library(stringr)
+library(lubridate)
+library(modelr)
+library(gapminder)
+library(cowplot)
+
+olympics <- read_csv("athlete_events.csv")
+regions <- read_csv("noc_regions.csv") 
+country_stats <- read_csv("population_total.csv")
+```
+
+****
+### Team Section
+****
+
+Team Question: What factors give countries or individuals advantages over their competition in the Olympics?
+
+Importance: This is an important question as it may provide both individuals and teams recommendations on how they can raise their likelyhood of winning a medal and bringing glory to their countries!
+
+```{r,echo = FALSE}
+#needs team plot
+```
+
+Answer/Conclusion: There are many factors that affect the performace of a country or indiviudual. We found that
+
+Recommendations: 
+
+****
+### Ethan's Section
+****
+
+Subquestion: How do countrys' populations affect olympic performance and how does this correlation differ in different areas of the world?
+
+Importance / Relation to Overall Question: This question contributes to out overall question as it may provide helpful recommendations to countries on how their teams could improve olympic performance based on population and area of the world.
+
+```{r}
+
+continents <- gapminder::gapminder %>%
+  select(country, continent) %>%
+  distinct()
+tidy_countries <- country_stats %>%
+  gather(seq(2,302), key = "year", value = "population")
+tidy_countries$year <- parse_double(tidy_countries$year)
+
+olympics2 <- olympics %>%
+  left_join(regions, by = "NOC") %>%
+  mutate(Medal = if_else(is.na(Medal), "No Medal", Medal)) %>%
+  mutate(country = region) %>%
+  mutate(country = if_else(country == "USA", "United States", country)) %>%
+  mutate(country = if_else(country == "UK", "United Kingdom", country)) %>%
+  mutate(country = if_else(country == "Slovakia", "Slovak Republic", country)) %>%
+  mutate(country = if_else(country == "Kyrgyzstan", "Kyrgyz Republic", country)) %>%
+  mutate(country = if_else(country == "Macedonia", "Macedonia, FYR", country)) %>%
+  mutate(year = Year)
+olympics3 <- olympics2 %>%
+  inner_join(tidy_countries, by = c("country", "year")) %>%
+  select(-c(notes,region, Team, NOC, Games, Age, Weight, Height, Sex, Year, City)) %>%
+  left_join(continents, by = "country")
+
+diagnose <- anti_join(olympics2, continents, by = "country")
+```
+
+* Tidying: this is the tidying section of my analysis, as I joined a gapminder dataset with the olympics dataset to get populations for each country for each year.  Some countries that are not recognized in tidy_countries, such as Chinese Taipei, Puerto Rico, and Singapore, won't appear in this study as their populations are unavailable.  Countries that had different names in the two datasets, like the US, the UK, and Slovakia, were renamed with if_else and will appear in this study.  After diagnosing from anti_join, around 34000 entries out of 270000 must be dropped.
+
+```{r, echo = FALSE}
+
+pops <- olympics3 %>%
+  select(year, population) %>%
+  distinct() %>%
+  arrange(year) %>%
+  group_by(year) %>%
+  summarise(world_pop = sum(population))
+
+medals <- olympics3 %>%
+  select(year, Medal) %>%
+  group_by(year) %>%
+  summarise(num_events = n())
+
+medal_table <- olympics3 %>%
+  filter(Medal != "No Medal") %>%
+  inner_join(pops, by = "year") %>%
+  mutate(pop_prop = population / world_pop) %>%
+  group_by(country, continent, year, pop_prop) %>%
+  summarise(num_medals = n()) %>%
+  arrange(year) %>%
+  na.omit() %>%
+  mutate(season = if_else(year %% 4 == 0, "Summer Games", "Winter Games")) %>%
+  inner_join(medals, by = "year") %>%
+  mutate(medal_prop = num_medals / num_events)
+
+model1 <- lm(medal_prop ~ pop_prop, data = medal_table)
+grid1 <- medal_table %>%
+  data_grid(medal_prop)
+stats1 <- medal_table %>%
+  add_predictions(model1) %>%
+  add_residuals(model1)
+
+ggplot(data = medal_table, mapping = aes(x = pop_prop)) +
+  geom_point(aes(y = medal_prop)) +
+  geom_line(aes(y = pred), data = stats1) +
+  xlab("Country Population Proportion Out of Other Competing Countrys' Populations") +
+  ylab("Medal Proportion For That Year") +
+  ggtitle("Olympics 1896 - 2016: Country Population vs. Performance") +
+  geom_text(aes(y = medal_prop,
+            label = if_else(medal_prop > 0.075 | pop_prop > 0.4, country, ""), 
+            hjust = if_else(medal_prop > 0.075, -0.1, 1.15)))
+
+cor(medal_table$pop_prop, medal_table$medal_prop)
+coef(model1)
+
+ggplot(data = stats1, aes(x = pop_prop, y = resid)) +
+  geom_point()
+
+```
+
+* Transformation: this is the transformation and first graphical / modeling section of my analysis.  I made a table in which the two variables of interest for correlation are population proportion and medal proportion.  Population proportion takes the population of a given country and divides it by the sum of the populations of other countries competing in the same olympics for that year, and medal proportion is the proportion of events in which individuals from given country medaled for a given year.  These proportions are necessary because of confounding variables such as events being added over time, populations rising over time, etc.
+
+* Findings 1: I first created a basic model and scatterplot of population proportion vs. medal proportion, as well as the corresponding residuals (note: points represent given countries AND given years, though I was unable to label the year on the graph.  I put them in this paragraph).  I found that there exists an overall positive moderate correlation value of R = 0.30 between the two variables and a weak slope of 0.08.  One of the most noticeable ideas about this graph is that based on the labels, we can see that some European countries (Greece and Germany in 1896, France in 1900, and the UK in 1908) are grouped closely together and far away from the US in 1904 and China in 1996, possibly confirming my belief that areas of the world may affect this correlation.  It's also noteable that these extreme proportions took place in the earliest years when there were less countries competing and less events.  Now it's time to analyze how continents of the world affect my overall correlation...
+
+```{r, echo = FALSE}
+
+ggplot(data = medal_table, mapping = aes(x = pop_prop)) +
+  geom_point(aes(y = medal_prop, color = continent)) +
+  geom_smooth(aes(y = medal_prop), method = "lm", se = FALSE) +
+  geom_line(aes(y = pred), data = stats1) +
+  xlab("Country Population Proportion Out of Other Competing Countrys' Populations") +
+  ylab("Medal Proportion For That Year") +
+  ggtitle("Olympics 1896 - 2016: Country Population vs. Performance") +
+  facet_wrap(~continent)
+
+nesting <- medal_table %>%
+  group_by(continent) %>%
+  nest()
+
+cont_model <- function(df){
+  lm(medal_prop ~ pop_prop, data = df)
+}
+
+nesting <- nesting %>%
+  mutate(model = map(data, cont_model)) %>%
+  mutate(pred = map(model, predict)) %>%
+  mutate(resid = map(model, residuals))
+
+nesting$model[[2]] #Europe - higher slope, stronger prediction (R = 0.45)
+europe_cor <- medal_table %>%
+  filter(continent == "Europe") 
+cor(europe_cor$pop_prop, europe_cor$medal_prop)
+
+nesting$model[[3]] #Americas - higher slope, stronger prediction (R = 0.64)
+americas_cor <- medal_table %>%
+  filter(continent == "Americas")
+cor(americas_cor$pop_prop, americas_cor$medal_prop)
+
+nesting$model[[4]] #Asia - lower slope, stronger prediction (R = 0.44)
+asia_cor <- medal_table %>% 
+  filter(continent == "Asia")
+cor(asia_cor$pop_prop, asia_cor$medal_prop)
+
+nesting$model[[1]] #Oceania - higher slope, weaker prediction (R = 0.23)
+oceania_cor <- medal_table %>% 
+  filter(continent == "Oceania")
+cor(oceania_cor$pop_prop, oceania_cor$medal_prop)
+
+nesting$model[[5]] #Africa - lower slope, stronger prediction (R = 0.33)
+africa_cor <- medal_table %>% 
+  filter(continent == "Africa")
+cor(africa_cor$pop_prop, africa_cor$medal_prop)
+
+```
+
+* Findings 2: After faceting by continent and creating models for each continent (blue lines) while comparing them to the overall model (black lines), we can see that there are clear distinctions between the 5 continents, though Oceania and Africa are rather insignificant due to lower sample size and less visibility.  Higher slopes exist in the Americas and Europe, with very strong R values of 0.64 and 0.45, respectively, meaning the correlation between population and olympic performance is very prevelent in these two continents.  Asia, on the other hand, shows relatively strong R value of 0.33 but a much weaker slope as countries in this part of the world appear to perform quite poorly regardless of population.  This is likely what weakened the overall correlation so much, especially with China in 1996 (over 1 billion people), getting so few medals.  I nested by continent so slopes of lines for all continents are visible, and also found all the corresponding filtered R values.
+
+* Explanation: Europe and the Americas likely show strong correlation between population proportion and olympic performance because they have historically included richer countries that care about sports, meaning population is a significant factor.  Asia, on the other hand, has historically included many third world countries under communism, shifting their focus away from sports, meaning a country with a giant population like China won't necessarily perform better than its neighbors if they also have barely trained top olympians.  Much of China's population also lives in rural areas.
+
+* New tools: I used modeling tools such as lm(), nesting, and adding predictions and residuals.  Explanations of how I used these tools are included above.
+
+****
+### Anderson's Section
+****
+
+Subquestion: How big of a factor is age in terms of winning medals in the olympics?
+
+Importance / Relation to Overall Question: Age is an important factor in the olympics. Depending on the age you could have a lot of professional experience in a sport or nearly none. Looking at the proportion of age and medals won, countries can determine the optimal age for winning.
+
+```{r, echo = FALSE}
+olly <- olympics %>%
+  mutate(Medal = if_else(is.na(Medal), "No Medal", Medal)) %>%
+  left_join(regions, by = "NOC") %>%
+  mutate(country = region) %>%
+  mutate(country = if_else(country == "USA", "United States", country)) %>%
+  mutate(country = if_else(country == "UK", "United Kingdom", country)) %>%
+  mutate(country = if_else(country == "Slovakia", "Slovak Republic", country)) %>%
+  mutate(country = if_else(country == "Kyrgyzstan", "Kyrgyz Republic", country)) %>%
+  mutate(country = if_else(country == "Macedonia", "Macedonia, FYR", country))
+
+olly2 <- olly %>%
+  mutate(Age1 = if_else(Age %in% seq(10, 21), "Youth",
+                        if_else(Age %in% seq(22,35), "Young Adults", "Older")))
+
+num_events <- olly2 %>%
+  group_by(Year) %>%
+  summarise(num_entries = n())
+  
+
+medal_tab <- olly2 %>%
+  group_by(Year, Age1, Medal) %>%
+  summarise(n = n()) %>%
+  inner_join(num_events, by = "Year") %>%
+  mutate(prop = n / num_entries)
+
+ggplot(data = medal_tab) +
+  geom_point(mapping = aes(x = Year, y = prop, color = Age1)) +
+  geom_smooth(mapping = aes(x = Year, y = prop, color = Age1), method = "lm", se = FALSE) +
+  facet_wrap(~Medal)
+
+nesting12 <- medal_tab %>%
+  group_by(Medal, Age1) %>%
+  nest()
+
+medmod <- function(meh){
+  lm(prop ~ Year, data = meh)
+}
+
+nesting12 <- nesting12 %>%
+  mutate(model = map(data, medmod)) %>%
+  mutate(pred = map(model, predict)) %>%
+  mutate(resid = map(model, residuals))
+nesting12$data[[11]]
+mod1 <- lm(prop ~ Year, data = nesting12$data[[11]])
+grid12 <- nesting12$data[[11]] %>%
+  data_grid(prop)
+stats12 <- nesting12$data[[11]] %>%
+  add_predictions(mod1) %>%
+  add_residuals(mod1)
+
+mod2 <- lm(prop ~ Year, data = nesting12$data[[6]])
+grid13 <- nesting12$data[[6]] %>%
+  data_grid(prop)
+stats13 <- nesting12$data[[6]] %>%
+  add_predictions(mod1) %>%
+  add_residuals(mod1)
+
+ggplot(data = stats13, mapping = aes(x = Year, y = resid)) +
+  geom_point() +
+  ylab("Residuals") +
+  ggtitle("Proportion of Young Adults winning Gold Medals")
+
+ggplot(data = stats12, mapping = aes(x = Year, y = resid)) +
+  geom_point() +
+  ylab("Residuals") +
+  ggtitle("Proportion of Youth winning no Medals")
+
+```
+
+Findings: In my findings I have found out that the amount of older participants start to decrease over the years. Through tidying up my data and categorizing participants by age I have developed a graph and a method to check the proportion of winning a bronze, silver, gold or no medal for three different age groups. I have also found a way to plot individual sections of the age categories I created and the type of medal they win.
+
+New Tools: In this lab I used new nesting tools to help me plot the proportions and the age groups into individual graphs. I also put in functions like lm(), add_predictions() and add_residuals().
+
+****
+### David's Section
+****
+
+Subquestion: Does sex have a significant influence on the probability of winning an olympic medal?
+
+Importance / Relation to Overall Question: 
+
+```{r,message=FALSE}
+sex <- olympics %>% group_by(Sex,Year) %>% summarise(participants = n()) %>% filter(Year != 1994,Year != 1998,Year != 2002,Year != 2006,Year != 2010,Year != 2014)
+## groups by given variables and then adds a column of today participants in that event
+sex1 <- olympics %>% group_by(Sex,Year) %>% count(Medal)
+sexxy <- inner_join(sex1,sex) %>% mutate(prop = n/participants)
+sassy <- sexxy %>% filter(Medal != "No Medal")%>% group_by(Sex,Year) %>% summarize(placing = sum(n),prop = sum(prop)) %>% filter(Year != 1994,Year != 1998,Year != 2002,Year != 2006,Year != 2010,Year != 2014)
+
+## try to find the probalilty you will place in any event for a given year, given your sex
+
+
+mod2 <- lm(placing ~ Year * Sex, data = sassy)
+
+gridtry <- sassy %>% 
+ data_grid(placing,Year) %>% 
+  gather_predictions(mod2)
+
+ggplot(sassy, aes(Year,placing,colour = Sex)) + 
+  geom_point() + 
+  geom_line(data = gridtry, aes(y = pred),size = 1)+ggtitle("Time Series on number of medalists for each sex")
+
+```
+
+Since there can nonly be 3 medalists per team/individal fo reach event, an increase in medals means that more and more games have been added to the olympics. Women have been included in more and more events as the years progressed.
+```{r}
+ggplot(data = sassy,aes(x = Year, y = prop))+
+  geom_line(aes(color = Sex),size = 1.2)+ggtitle("Number of Medalists over the years")+ylab("Probality of being a Medalist")
+   
+see <- sassy %>% filter(Year < 1970)
+## 68 countries did not partake in 1980 olympics # near the end of the cold war
+```
+
+Findings: 
+
+New Tools:
+
+****
+### Ryan's Section
+****
+Subquestion: In 1980, how does height affect winnings for Canoeing sports?
+
+Importance / Relation to Overall Question: You would think that height would affect the performance of Canoeing Sports, as taller someone is, the more likely they are to have long, strong strokes.
+
+```{r, echo = FALSE}
+
+olympics5 <- olympics2 %>% 
+  #filter(year == 1980) %>% 
+  filter(Sport == 'Canoeing') %>%
+  group_by(Event) 
+
+
+olympics5 %>% 
+  count(Medal) %>% 
+  filter(n != "No Medal")
+
+oly <-olympics5 %>% mutate(medalz  = ifelse(Medal == 'Gold', 3, 
+                                      ifelse(Medal == 'Silver', 2,
+                                             ifelse(Medal == 'Bronze', 1, 0))))
+
+
+mod2 <- lm(medalz ~ Height, data = oly)  
+
+grid2 <- oly %>%
+  data_grid(Height,medalz)
+
+grid2 <- grid2 %>%
+  add_predictions(mod2)
+
+coef(mod2)
+ggplot(data = oly, aes(x = Height)) +
+  geom_point(aes(y = medalz), na.rm = T) +
+  geom_line(aes(y = pred), data = grid2, colour = "red", size =1, na.rm = T)
+
+oly2 <- oly %>%
+  add_residuals(mod2)
+#resids very far from 0 so very likely no correlation
+ggplot(data = oly2, aes(x =Height , y =resid)) +
+  geom_ref_line(h=0)+
+  geom_point(na.rm = T)
+
+ 
+
+
+```
+
+Findings: There is a slight positive correlation between performance and height, so we can kind of conlcude that ones height might slighlty impact their performance. This direclty answers the main question by suggesting that there might be a poor correlation between height and performing better in the olympics.  
+
+New Tools: I used data_grid, add_predictions, lm, and ifelse statements
+
+****
+### Arie's Section
+****
+
+Subquestion: Does a country do better or worse depending on the season of the olympics?
+
+Importance/ elation to Overall Question:: This Question is important and interesting because countries will be able to understand which season they do better in. This will help them improve during their weak season.
+
+```{r, echo = FALSE}
+
+trial1 <- olympics %>%
+  left_join(regions, by = "NOC") %>%
+  mutate(Medal = if_else(is.na(Medal), "No Medal", Medal)) %>%
+  select(Year, Season, region, Medal)
+
+noMed_ct<- trial1%>%
+  filter(Medal == "No Medal")%>%
+  group_by(Year, region)%>%
+  summarise(No_Medal_count = n())
+
+gold_ct<-trial1%>%
+  filter(Medal == "Gold")%>%
+  group_by(Year, region)%>%
+  summarise(Gold_Medal_count = n())
+
+silver_ct<-trial1%>%
+  filter(Medal == "Silver")%>%
+  group_by(Year, region)%>%
+  summarise(Silver_Medal_count = n())
+
+bronze_ct<-trial1%>%
+  filter(Medal == "Silver")%>%
+  group_by(Year, region)%>% 
+  summarise(Bronze_Medal_count = n())
+
+all <- merge(trial1, noMed_ct, by = c('Year', 'region'))
+
+all2 <- merge(all, gold_ct, by = c('Year', 'region'))
+
+all3 <- merge(all2, silver_ct, by = c('Year', 'region'))
+
+all4 <- merge(all3, bronze_ct, by = c('Year', 'region'))
+
+ff<- all4%>%select(-c("Medal"))%>%
+  distinct()%>%
+  mutate(gold_prop = Gold_Medal_count/( Gold_Medal_count+ Silver_Medal_count+ Bronze_Medal_count+No_Medal_count),
+         no_prop = No_Medal_count/( Gold_Medal_count+ Silver_Medal_count+ Bronze_Medal_count+No_Medal_count),
+         silver_prop = Silver_Medal_count/( Gold_Medal_count+ Silver_Medal_count+ Bronze_Medal_count+No_Medal_count),
+         bronze_prop = Bronze_Medal_count/( Gold_Medal_count+ Silver_Medal_count+ Bronze_Medal_count+No_Medal_count))
+
+ff$No_Medal_count <- as.numeric(ff$No_Medal_count)
+ff$Gold_Medal_count <- as.numeric(ff$Gold_Medal_count)
+ff$Silver_Medal_count <- as.numeric(ff$Silver_Medal_count)
+ff$Bronze_Medal_count <- as.numeric(ff$Bronze_Medal_count)
+ff$Year <- as.numeric(ff$Year)
+
+USA <- ff %>%
+  filter(region == "USA")
+
+plot.USA <-ggplot(data = USA ,mapping = aes(x = gold_prop, y = Gold_Medal_count, color = Season))+geom_point()+geom_line()
+
+CHINA <-ff%>%
+  filter(region == "China")
+
+plot.CHINA <-ggplot(data = CHINA ,mapping = aes(x = gold_prop, y = Gold_Medal_count, color = Season))+geom_point()+geom_line()
+
+RUSSIA <-ff%>%
+  filter(region == "Russia")
+
+plot.RUS <- ggplot(data = RUSSIA ,mapping = aes(x = gold_prop, y = Gold_Medal_count, color = Season))+geom_point()+geom_line()
+
+
+BRA <-ff%>%
+  filter(region == "Brazil")
+
+plot.BRA <- ggplot(data = BRA ,mapping = aes(x = gold_prop, y = Gold_Medal_count, color = Season))+geom_point()+geom_line()
+
+plot_grid(plot.CHINA, plot.USA, plot.RUS, plot.BRA, labels = c("China", "USA", "Russia", "Brazil"))
+
+ff2<- all4%>%select(-c("Medal"))%>%
+  distinct()%>%
+  mutate(gold_prop = Gold_Medal_count/( Gold_Medal_count+ Silver_Medal_count+ Bronze_Medal_count+No_Medal_count),
+         no_prop = No_Medal_count/( Gold_Medal_count+ Silver_Medal_count+ Bronze_Medal_count+No_Medal_count),
+         silver_prop = Silver_Medal_count/( Gold_Medal_count+ Silver_Medal_count+ Bronze_Medal_count+No_Medal_count),
+         bronze_prop = Bronze_Medal_count/( Gold_Medal_count+ Silver_Medal_count+ Bronze_Medal_count+No_Medal_count))
+
+ff2$No_Medal_count <- as.numeric(ff2$No_Medal_count)
+ff2$Gold_Medal_count <- as.numeric(ff2$Gold_Medal_count)
+ff2$Silver_Medal_count <- as.numeric(ff2$Silver_Medal_count)
+ff2$Bronze_Medal_count <- as.numeric(ff2$Bronze_Medal_count)
+ff2$Year <- as.numeric(ff2$Year)
+
+ff2 <- ff2%>%
+  group_by(region)%>%
+  nest()
+
+gold_mod <- function(df){
+  lm(Gold_Medal_count~ gold_prop, data = df)
+}
+
+ff2<-ff2%>%
+  mutate(mod = map(data, gold_mod))
+
+mercaCoef <- ff2$mod[[9]]
+mercaCoef 
+
+chinaCoef <- ff2$mod[[45]]
+chinaCoef
+
+russiaCoef <- ff2$mod[[18]]
+russiaCoef
+
+brazilCoef <- ff2$mod[[20]]
+brazilCoef
+```
+
+Findings: Since there were so many countires, I focused on places with different climates (USA, Russia, China, and Brazil). The grapphs above show that warmer climate countries perform better in the summer, coolor climate countires perform better in the winter. This answers my quesiton, "Does a country do better or worse depending on the season of the olympics?" This relates to the overall quesiton because, this shows countries with warner climates have an advantage in the summer and countries with cooler climates have the advantage in the winter.
+
+New Tools:  I used `plot_grid()`, `map()`, `nest()`, `lm()`.
+
+****
+### Lab 2 Reflections
+****
+
+* Team: At the begging of the semester our goals were "We aspire to enhance our technical, communication, and project management skills. We also aspire to be a rad team but not team number one." We think we did a pretty good job in meeting our goals. If we could travel back in time we would tell our team to keep being rad, meet up more often, and start discussing reading materials before taking the irat and trat.
+
+* Ethan: After learning much more about the data science field, my 6-month goal after graduation has changed as it may not be necessary for me to get a master's degree in data science.  I hope to gain enough knowledge and experience through my major, online self learning, and internships to become a data scientst soon after I graduate.  My 5 year goal has not changed as I still hope to travel and work in the big city!  I learned so much R in this course and it has further ignited my confidence and my passion for data science.  If I were go go back to the beginning of the semester, I'd tell myself to keep working on personal projects so I can enhance my skills quickly.
+
+* David (big gey): 
+
+* Ryan: My 6 month goal after graduating was wantint to find a job as a data scientist. This did not really change. My 5 years goal after graduating wanting to be working remotely and traveling. This also did not really change. I learned base R, for the most part. I also learned a little bit more about what it's like to work on a team. Oh and I learned gitKraken. If I could give myself advice, it would be to start aksing more quesiton, keep studying more for the tRats, and stop second guessing yourself.
+
+* Arie: After taking this class, my 6-month and 5 year goal still remains the same. However, I think I want to start working on my buisness plan as I secure a data science job. I learned so much in this class! I've never programmed before, and now I can do some programming in R. I learned about permuation tests. If I were to go back and give myself advice, I would tell myself to do all the readings and exercises thoroughly, and practice R more outside of class.
+
+* Anderson: After learning a lot about the basic functions and format in the data science field my 6-month goal has changed. I will try to minor if not major in the data sience field and learn as many useful and necessary languages to compute and tidy data. My 5 year goal has remained somewhat the same. I still plan on living in the city and hope to have a fulfilling job. Throughout this entire course I have gained lots of knowledge on computing and feel comfortable with the language of R. If I could go back and give myself advice it would be to review the material and practice each chapter on my own.
+
+****
+### Who Did What
+****
+
+* Ethan: Individual section, helped other ind. sections, formatting
+
+* David (big gey): 
+
+* Ryan: ind section
+
+* Arie: in section, team findings/conclusion, recomendations, team reflection
 
 * Anderson: Individual section, tidying
