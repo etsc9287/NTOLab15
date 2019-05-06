@@ -305,18 +305,55 @@ New Tools:
 ****
 ### Ryan's Section
 ****
+Subquestion: In 1980, how does height affect winnings for Canoeing sports?
 
-Subquestion: 
-
-Importance / Relation to Overall Question:
+Importance / Relation to Overall Question: You would think that height would affect the performance of Canoeing Sports, as taller someone is, the more likely they are to have long, strong strokes.
 
 ```{r, echo = FALSE}
 
+olympics5 <- olympics2 %>% 
+  #filter(year == 1980) %>% 
+  filter(Sport == 'Canoeing') %>%
+  group_by(Event) 
+
+
+olympics5 %>% 
+  count(Medal) %>% 
+  filter(n != "No Medal")
+
+oly <-olympics5 %>% mutate(medalz  = ifelse(Medal == 'Gold', 3, 
+                                      ifelse(Medal == 'Silver', 2,
+                                             ifelse(Medal == 'Bronze', 1, 0))))
+
+
+mod2 <- lm(medalz ~ Height, data = oly)  
+
+grid2 <- oly %>%
+  data_grid(Height,medalz)
+
+grid2 <- grid2 %>%
+  add_predictions(mod2)
+
+coef(mod2)
+ggplot(data = oly, aes(x = Height)) +
+  geom_point(aes(y = medalz), na.rm = T) +
+  geom_line(aes(y = pred), data = grid2, colour = "red", size =1, na.rm = T)
+
+oly2 <- oly %>%
+  add_residuals(mod2)
+#resids very far from 0 so very likely no correlation
+ggplot(data = oly2, aes(x =Height , y =resid)) +
+  geom_ref_line(h=0)+
+  geom_point(na.rm = T)
+
+ 
+
+
 ```
 
-Findings: 
+Findings: There is a slight positive correlation between performance and height, so we can kind of conlcude that ones height might slighlty impact their performance. This direclty answers the main question by suggesting that there might be a poor correlation between height and performing better in the olympics.  
 
-New Tools:
+New Tools: I used data_grid, add_predictions, lm, and ifelse statements
 
 ****
 ### Arie's Section
@@ -448,7 +485,8 @@ New Tools:  I used `plot_grid()`, `map()`, `nest()`, `lm()`.
 
 * David (big gey): 
 
-* Ryan:
+* Ryan: My 6 month goal after graduating was wantint to find a job as a data scientist. This did not really change. My 5 years goal after graduating wanting to be working remotely and traveling. This also did not really change. I learned base R, for the most part. I also learned a little bit more about what it's like to work on a team. Oh and I learned gitKraken. If I could give myself advice, it would be to start aksing more quesiton, keep studying more for the tRats, and stop second guessing yourself.
+
 
 * Arie:
 
