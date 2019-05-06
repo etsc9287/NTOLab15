@@ -490,7 +490,7 @@ New Tools:  I used `plot_grid()`, `map()`, `nest()`, `lm()`.
 
 * Arie:
 
-* Anderson
+* Anderson: After learning a lot about the basic functions and format in the data science field my 6-month goal has changed. I will try to minor if not major in the data sience field and learn as many useful and necessary languages to compute and tidy data. My 5 year goal has remained somewhat the same. I still plan on living in the city and hope to have a fulfilling job. Throughout this entire course I have gained lots of knowledge on computing and feel comfortable with the language of R. If I could go back and give myself advice it would be to review the material and practice each chapter on my own.
 
 ****
 ### Who Did What
@@ -504,4 +504,4 @@ New Tools:  I used `plot_grid()`, `map()`, `nest()`, `lm()`.
 
 * Arie:
 
-* Anderson
+* Anderson: Individual section, tidying
