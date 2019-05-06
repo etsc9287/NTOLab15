@@ -12,6 +12,7 @@ library(stringr)
 library(lubridate)
 library(modelr)
 library(gapminder)
+library(cowplot)
 
 olympics <- read_csv("athlete_events.csv")
 regions <- read_csv("noc_regions.csv") 
@@ -307,17 +308,121 @@ New Tools:
 ### Arie's Section
 ****
 
-Subquestion: 
+Subquestion: Does a country do better or worse depending on the season of the olympics?
 
-Importance / Relation to Overall Question:
+Importance/ elation to Overall Question:: This Question is important and interesting because countries will be able to understand which season they do better in. This will help them improve during their weak season.
 
 ```{r, echo = FALSE}
 
+trial1 <- olympics %>%
+  left_join(regions, by = "NOC") %>%
+  mutate(Medal = if_else(is.na(Medal), "No Medal", Medal)) %>%
+  select(Year, Season, region, Medal)
+
+noMed_ct<- trial1%>%
+  filter(Medal == "No Medal")%>%
+  group_by(Year, region)%>%
+  summarise(No_Medal_count = n())
+
+gold_ct<-trial1%>%
+  filter(Medal == "Gold")%>%
+  group_by(Year, region)%>%
+  summarise(Gold_Medal_count = n())
+
+silver_ct<-trial1%>%
+  filter(Medal == "Silver")%>%
+  group_by(Year, region)%>%
+  summarise(Silver_Medal_count = n())
+
+bronze_ct<-trial1%>%
+  filter(Medal == "Silver")%>%
+  group_by(Year, region)%>% 
+  summarise(Bronze_Medal_count = n())
+
+all <- merge(trial1, noMed_ct, by = c('Year', 'region'))
+
+all2 <- merge(all, gold_ct, by = c('Year', 'region'))
+
+all3 <- merge(all2, silver_ct, by = c('Year', 'region'))
+
+all4 <- merge(all3, bronze_ct, by = c('Year', 'region'))
+
+ff<- all4%>%select(-c("Medal"))%>%
+  distinct()%>%
+  mutate(gold_prop = Gold_Medal_count/( Gold_Medal_count+ Silver_Medal_count+ Bronze_Medal_count+No_Medal_count),
+         no_prop = No_Medal_count/( Gold_Medal_count+ Silver_Medal_count+ Bronze_Medal_count+No_Medal_count),
+         silver_prop = Silver_Medal_count/( Gold_Medal_count+ Silver_Medal_count+ Bronze_Medal_count+No_Medal_count),
+         bronze_prop = Bronze_Medal_count/( Gold_Medal_count+ Silver_Medal_count+ Bronze_Medal_count+No_Medal_count))
+
+ff$No_Medal_count <- as.numeric(ff$No_Medal_count)
+ff$Gold_Medal_count <- as.numeric(ff$Gold_Medal_count)
+ff$Silver_Medal_count <- as.numeric(ff$Silver_Medal_count)
+ff$Bronze_Medal_count <- as.numeric(ff$Bronze_Medal_count)
+ff$Year <- as.numeric(ff$Year)
+
+USA <- ff %>%
+  filter(region == "USA")
+
+plot.USA <-ggplot(data = USA ,mapping = aes(x = gold_prop, y = Gold_Medal_count, color = Season))+geom_point()+geom_line()
+
+CHINA <-ff%>%
+  filter(region == "China")
+
+plot.CHINA <-ggplot(data = CHINA ,mapping = aes(x = gold_prop, y = Gold_Medal_count, color = Season))+geom_point()+geom_line()
+
+RUSSIA <-ff%>%
+  filter(region == "Russia")
+
+plot.RUS <- ggplot(data = RUSSIA ,mapping = aes(x = gold_prop, y = Gold_Medal_count, color = Season))+geom_point()+geom_line()
+
+
+BRA <-ff%>%
+  filter(region == "Brazil")
+
+plot.BRA <- ggplot(data = BRA ,mapping = aes(x = gold_prop, y = Gold_Medal_count, color = Season))+geom_point()+geom_line()
+
+plot_grid(plot.CHINA, plot.USA, plot.RUS, plot.BRA, labels = c("China", "USA", "Russia", "Brazil"))
+
+ff2<- all4%>%select(-c("Medal"))%>%
+  distinct()%>%
+  mutate(gold_prop = Gold_Medal_count/( Gold_Medal_count+ Silver_Medal_count+ Bronze_Medal_count+No_Medal_count),
+         no_prop = No_Medal_count/( Gold_Medal_count+ Silver_Medal_count+ Bronze_Medal_count+No_Medal_count),
+         silver_prop = Silver_Medal_count/( Gold_Medal_count+ Silver_Medal_count+ Bronze_Medal_count+No_Medal_count),
+         bronze_prop = Bronze_Medal_count/( Gold_Medal_count+ Silver_Medal_count+ Bronze_Medal_count+No_Medal_count))
+
+ff2$No_Medal_count <- as.numeric(ff2$No_Medal_count)
+ff2$Gold_Medal_count <- as.numeric(ff2$Gold_Medal_count)
+ff2$Silver_Medal_count <- as.numeric(ff2$Silver_Medal_count)
+ff2$Bronze_Medal_count <- as.numeric(ff2$Bronze_Medal_count)
+ff2$Year <- as.numeric(ff2$Year)
+
+ff2 <- ff2%>%
+  group_by(region)%>%
+  nest()
+
+gold_mod <- function(df){
+  lm(Gold_Medal_count~ gold_prop, data = df)
+}
+
+ff2<-ff2%>%
+  mutate(mod = map(data, gold_mod))
+
+mercaCoef <- ff2$mod[[9]]
+mercaCoef 
+
+chinaCoef <- ff2$mod[[45]]
+chinaCoef
+
+russiaCoef <- ff2$mod[[18]]
+russiaCoef
+
+brazilCoef <- ff2$mod[[20]]
+brazilCoef
 ```
 
-Findings: 
+Findings: Since there were so many countires, I focused on places with different climates (USA, Russia, China, and Brazil). The grapphs above show that warmer climate countries perform better in the summer, coolor climate countires perform better in the winter. This answers my quesiton, "Does a country do better or worse depending on the season of the olympics?" This relates to the overall quesiton because, this shows countries with warner climates have an advantage in the summer and countries with cooler climates have the advantage in the winter.
 
-New Tools:
+New Tools:  I used `plot_grid()`, `map()`, `nest()`, `lm()`.
 
 ****
 ### Lab 2 Reflections
