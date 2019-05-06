@@ -27,7 +27,7 @@ Team Question: What factors give countries or individuals advantages over their 
 Importance: This is an important question as it may provide both individuals and teams recommendations on how they can raise their likelyhood of winning a medal and bringing glory to their countries!
 
 ```{r,echo = FALSE}
-#needs teal plot
+#needs team plot
 ```
 
 Answer/Conclusion:
@@ -40,7 +40,7 @@ Recommendations:
 
 Subquestion: How do countrys' populations affect olympic performance and how does this correlation differ in different areas of the world?
 
-Importance: This question contributes to out overall question as it may provide helpful recommendations to countries on how their teams could improve olympic performance based on population and area of the world.
+Importance / Relation to Overall Question: This question contributes to out overall question as it may provide helpful recommendations to countries on how their teams could improve olympic performance based on population and area of the world.
 
 ```{r}
 
@@ -179,6 +179,100 @@ cor(africa_cor$pop_prop, africa_cor$medal_prop)
 
 * Findings 2: After faceting by continent and creating models for each continent (blue lines) while comparing them to the overall model (black lines), we can see that there are clear distinctions between the 5 continents, though Oceania and Africa are rather insignificant due to lower sample size and less visibility.  Higher slopes exist in the Americas and Europe, with very strong R values of 0.64 and 0.45, respectively, meaning the correlation between population and olympic performance is very prevelent in these two continents.  Asia, on the other hand, shows relatively strong R value of 0.33 but a much weaker slope as countries in this part of the world appear to perform quite poorly regardless of population.  This is likely what weakened the overall correlation so much, especially with China in 1996 (over 1 billion people), getting so few medals.  I nested by continent so slopes of lines for all continents are visible, and also found all the corresponding filtered R values.
 
-* Explanation / Recommendations: Europe and the Americas likely show strong correlation between population proportion and olympic performance because they have historically included richer countries that care about sports, meaning population is a significant factor.  Asia, on the other hand, has historically included many third world countries under communism, shifting their focus away from sports, meaning a country with a giant population like China won't necessarily perform better than its neighbors if they also have barely trained top olympians.  Much of China's population also lives in rural areas.
+* Explanation: Europe and the Americas likely show strong correlation between population proportion and olympic performance because they have historically included richer countries that care about sports, meaning population is a significant factor.  Asia, on the other hand, has historically included many third world countries under communism, shifting their focus away from sports, meaning a country with a giant population like China won't necessarily perform better than its neighbors if they also have barely trained top olympians.  Much of China's population also lives in rural areas.
 
 * New tools: I used modeling tools such as lm(), nesting, and adding predictions and residuals.  Explanations of how I used these tools are included above.
+
+****
+### Anderson's Section
+****
+
+Subquestion: 
+
+Importance / Relation to Overall Question:
+
+```{r, echo = FALSE}
+
+```
+
+Findings: 
+
+New Tools:
+
+****
+### David's Section
+****
+
+Subquestion: 
+
+Importance / Relation to Overall Question:
+
+```{r, echo = FALSE}
+
+```
+
+Findings: 
+
+New Tools:
+
+****
+### Ryan's Section
+****
+
+Subquestion: 
+
+Importance / Relation to Overall Question:
+
+```{r, echo = FALSE}
+
+```
+
+Findings: 
+
+New Tools:
+
+****
+### Arie's Section
+****
+
+Subquestion: 
+
+Importance / Relation to Overall Question:
+
+```{r, echo = FALSE}
+
+```
+
+Findings: 
+
+New Tools:
+
+****
+### Lab 2 Reflections
+****
+
+* Team: 
+
+* Ethan: After learning much more about the data science field, my 6-month goal after graduation has changed as it may not be necessary for me to get a master's degree in data science.  I hope to gain enough knowledge and experience through my major, online self learning, and internships to become a data scientst soon after I graduate.  My 5 year goal has not changed as I still hope to travel and work in the big city!  I learned so much R in this course and it has further ignited my confidence and my passion for data science.  If I were go go back to the beginning of the semester, I'd tell myself to keep working on personal projects so I can enhance my skills quickly.
+
+* David (big gey): 
+
+* Ryan:
+
+* Arie:
+
+* Anderson
+
+****
+### Who Did What
+****
+
+* Ethan: Individual section, helped other ind. sections, formatting
+
+* David (big gey): 
+
+* Ryan:
+
+* Arie:
+
+* Anderson
