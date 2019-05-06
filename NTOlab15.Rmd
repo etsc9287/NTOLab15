@@ -296,18 +296,18 @@ ggplot(sassy, aes(Year,placing,colour = Sex)) +
 
 ```
 
-Since there can nonly be 3 medalists per team/individal fo reach event, an increase in medals means that more and more games have been added to the olympics. Women have been included in more and more events as the years progressed.
+Since there can nonly be 3 medalists per team/individal fo reach event, an increase in medals means that more and more games have been added to the olympics. Women have been included in more and more events as the years progressed. The line of best fit for the females backs up this claim. 
 ```{r}
 ggplot(data = sassy,aes(x = Year, y = prop))+
-  geom_line(aes(color = Sex),size = 1.2)+ggtitle("Number of Medalists over the years")+ylab("Probality of being a Medalist")
+  geom_line(aes(color = Sex),size = 1.2)+ggtitle("Probabily of being a medalist over the years")+ylab("Probality of being a Medalist")
    
-see <- sassy %>% filter(Year < 1970)
 ## 68 countries did not partake in 1980 olympics # near the end of the cold war
 ```
 
-Findings: 
+Findings: From the graph above, it seems that sex does have a effect on the probability that an individual will earn a medal. Women genreally have a higher probablity of winning a metal as they have less people competing for each metal. In 1980's the olympics were housed in Russia. In these olympics 68 countries refused to participate. This explains the spike in the probability chart. Less people == higher likelihood of placing. To summarize, women are being included in more and more olympics sports and if you area woman, there are less people competing for those medals. You have a slihgly better chance at earning a medal.
 
-New Tools:
+New Tools: I used commands like `filter()`, `mutate()`, `innner_join()`, and `full_join()` to tidy the olympic data in order to find the probalilty an individual will place in any event for a given year, given thier sex. I used the model `y ~ x1*x2` or `placing ~ year * Sex` to see if the Sex along with Year influence the amount of medals given. I used `gather_predictions()` to plot the lines of best fit for each sex. Sex does have an effect on the coorelation between year and medals given. The line of best fit for females is significally steeper. This means that females are being included in more and more events.
+ 
 
 ****
 ### Ryan's Section
