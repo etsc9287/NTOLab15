@@ -274,8 +274,8 @@ Subquestion: Does sex have a significant influence on the probability of winning
 
 Importance / Relation to Overall Question: 
 
-```{r}
-sex <- olympics %>% group_by(Sex,Year) %>% summarise(participants = n()) 
+```{r,message=FALSE}
+sex <- olympics %>% group_by(Sex,Year) %>% summarise(participants = n()) %>% filter(Year != 1994,Year != 1998,Year != 2002,Year != 2006,Year != 2010,Year != 2014)
 ## groups by given variables and then adds a column of today participants in that event
 sex1 <- olympics %>% group_by(Sex,Year) %>% count(Medal)
 sexxy <- inner_join(sex1,sex) %>% mutate(prop = n/participants)
@@ -283,9 +283,16 @@ sassy <- sexxy %>% filter(Medal != "No Medal")%>% group_by(Sex,Year) %>% summari
 
 ## try to find the probalilty you will place in any event for a given year, given your sex
 
-ggplot(data = sassy,aes(x = Year, y = placing))+
-  geom_line(aes(color = Sex),size = 1.2)+ggtitle("Number of Medalists over the years")+ylab("Number of Medals")
-   
+
+mod2 <- lm(placing ~ Year * Sex, data = sassy)
+
+gridtry <- sassy %>% 
+ data_grid(placing,Year) %>% 
+  gather_predictions(mod2)
+
+ggplot(sassy, aes(Year,placing,colour = Sex)) + 
+  geom_point() + 
+  geom_line(data = gridtry, aes(y = pred),size = 1)+ggtitle("Time Series on number of medalists for each sex")
 
 ```
 
