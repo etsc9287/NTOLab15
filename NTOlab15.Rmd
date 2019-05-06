@@ -58,7 +58,7 @@ Subquestion: How do countrys' populations affect olympic performance and how doe
 
 Importance / Relation to Overall Question: This question contributes to out overall question as it may provide helpful recommendations to countries on how their teams could improve olympic performance based on population and area of the world.
 
-```{r}
+```{r,warning=FALSE,message=FALSE}
 
 continents <- gapminder::gapminder %>%
   select(country, continent) %>%
@@ -289,7 +289,7 @@ Subquestion: Does sex have a significant influence on the probability of winning
 
 Importance / Relation to Overall Question: 
 
-```{r,message=FALSE}
+```{r,message=FALSE,echo=FALSE}
 sex <- olympics %>% group_by(Sex,Year) %>% summarise(participants = n()) %>% filter(Year != 1994,Year != 1998,Year != 2002,Year != 2006,Year != 2010,Year != 2014)
 ## groups by given variables and then adds a column of today participants in that event
 sex1 <- olympics %>% group_by(Sex,Year) %>% count(Medal)
@@ -312,7 +312,7 @@ ggplot(sassy, aes(Year,placing,colour = Sex)) +
 ```
 
 Since there can nonly be 3 medalists per team/individal fo reach event, an increase in medals means that more and more games have been added to the olympics. Women have been included in more and more events as the years progressed. The line of best fit for the females backs up this claim. 
-```{r}
+```{r,echo=FALSE}
 ggplot(data = sassy,aes(x = Year, y = prop))+
   geom_line(aes(color = Sex),size = 1.2)+ggtitle("Probabily of being a medalist over the years")+ylab("Probality of being a Medalist")
    
@@ -505,7 +505,7 @@ New Tools:  I used `plot_grid()`, `map()`, `nest()`, `lm()`.
 
 * Ethan: After learning much more about the data science field, my 6-month goal after graduation has changed as it may not be necessary for me to get a master's degree in data science.  I hope to gain enough knowledge and experience through my major, online self learning, and internships to become a data scientst soon after I graduate.  My 5 year goal has not changed as I still hope to travel and work in the big city!  I learned so much R in this course and it has further ignited my confidence and my passion for data science.  If I were go go back to the beginning of the semester, I'd tell myself to keep working on personal projects so I can enhance my skills quickly.
 
-* David (big gey): 
+* David (big gey): Lets see, 6 months after graduation I hope to be getting my masters degree in applied math. Hopefully by that time I have started to research the brain. My 5 year goal is hopfully to find either a data job that has me traveling taking climate data or conducting research on brain mathematics. I think this class helped me learn what data science is and how I could potentially apply it to my aireas of interest. Gitkraken is a great program. I used it outside of this class for projects in ODE and Matrix Methods. I also used R for my Matrix methods project. If I could give myself some advice, I would say explore more data on kaggle and other websites, it might be fun.
 
 * Ryan: My 6 month goal after graduating was wantint to find a job as a data scientist. This did not really change. My 5 years goal after graduating wanting to be working remotely and traveling. This also did not really change. I learned base R, for the most part. I also learned a little bit more about what it's like to work on a team. Oh and I learned gitKraken. If I could give myself advice, it would be to start aksing more quesiton, keep studying more for the tRats, and stop second guessing yourself.
 
@@ -519,7 +519,7 @@ New Tools:  I used `plot_grid()`, `map()`, `nest()`, `lm()`.
 
 * Ethan: Individual section, helped other ind. sections, formatting
 
-* David (big gey): 
+* David (big gey): Individual section, reflection, team graph, team description, formating
 
 * Ryan: ind section
 
