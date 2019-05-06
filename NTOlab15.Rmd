@@ -187,11 +187,63 @@ cor(africa_cor$pop_prop, africa_cor$medal_prop)
 ### Anderson's Section
 ****
 
-Subquestion: 
+Subquestion: How big of a factor is age in terms of winning medals in the olympics?
 
-Importance / Relation to Overall Question:
+Importance / Relation to Overall Question: Age is an important factor in the olympics. Depending on the age you could have a lot of professional experience in a sport or nearly none. Looking at the proportion of age and medals won, countries can determine the optimal age for winning.
 
 ```{r, echo = FALSE}
+olly <- olympics %>%
+  mutate(Medal = if_else(is.na(Medal), "No Medal", Medal)) %>%
+  left_join(regions, by = "NOC") %>%
+  mutate(country = region) %>%
+  mutate(country = if_else(country == "USA", "United States", country)) %>%
+  mutate(country = if_else(country == "UK", "United Kingdom", country)) %>%
+  mutate(country = if_else(country == "Slovakia", "Slovak Republic", country)) %>%
+  mutate(country = if_else(country == "Kyrgyzstan", "Kyrgyz Republic", country)) %>%
+  mutate(country = if_else(country == "Macedonia", "Macedonia, FYR", country))
+
+olly2 <- olly %>%
+  mutate(Age1 = if_else(Age %in% seq(10, 21), "Youth",
+                        if_else(Age %in% seq(22,35), "Young Adults", "Older")))
+
+num_events <- olly2 %>%
+  group_by(Year) %>%
+  summarise(num_entries = n())
+  
+
+medal_tab <- olly2 %>%
+  group_by(Year, Age1, Medal) %>%
+  summarise(n = n()) %>%
+  inner_join(num_events, by = "Year") %>%
+  mutate(prop = n / num_entries)
+
+ggplot(data = medal_tab) +
+  geom_point(mapping = aes(x = Year, y = prop, color = Age1)) +
+  geom_smooth(mapping = aes(x = Year, y = prop, color = Age1), method = "lm", se = FALSE) +
+  facet_wrap(~Medal)
+
+nesting12 <- medal_tab %>%
+  group_by(Medal, Age1) %>%
+  nest()
+
+medmod <- function(meh){
+  lm(prop ~ Year, data = meh)
+}
+
+nesting12 <- nesting12 %>%
+  mutate(model = map(data, medmod)) %>%
+  mutate(pred = map(model, predict)) %>%
+  mutate(resid = map(model, residuals))
+nesting12$data[[11]]
+mod1 <- lm(prop ~ Year, data = nesting12$data[[11]])
+grid12 <- nesting12$data[[11]] %>%
+  data_grid(prop)
+stats12 <- nesting12$data[[11]] %>%
+  add_predictions(mod1) %>%
+  add_residuals(mod1)
+
+ggplot(data = stats12, mapping = aes(x = prop, y = resid)) +
+  geom_point()
 
 ```
 
